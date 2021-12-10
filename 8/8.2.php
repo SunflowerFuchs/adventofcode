@@ -3,7 +3,6 @@
 require_once 'helpers.php';
 
 $inputs = array_filter(explode("\n", file_get_contents('input.txt')));
-$inputs = ['acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf'];
 
 $count = 0;
 foreach ($inputs as $set) {
@@ -20,10 +19,31 @@ foreach ($inputs as $set) {
     $mappedWires = array_fill_keys(range(0, 9), null);
 
     $topWire = array_values(array_filter(str_split($nums[7]), fn($char) => !str_contains($nums[1], $char)))[0];
-    $remainingWires = array_values(array_filter(range('a', 'g'), fn ($char) => $char !== $topWire));
-    $perms = array_map(fn ($perm) => $topWire . $perm, generatePermutations($remainingWires));
+    $remainingWires = array_values(array_filter(range('a', 'g'), fn($char) => $char !== $topWire));
+    $permutations = array_map(fn($perm) => $topWire . $perm, generatePermutations($remainingWires));
 
     // No idea what i'm trying to do here
+    foreach ($permutations as $permutation) {
+        $counter = 0;
+        $wires = [];
+        foreach (str_split($permutation) as $char) {
+            $wires[$char] = WIRE_MAPPING[$counter++];
+        }
+
+        $combined = array_map(fn($number) => array_reduce(str_split($number),
+            fn($carry, $char) => $wires[$char] | $carry, 0), $numbers);
+        $intersect = array_intersect($combined, NUMBER_MAPPING);
+        $reverse = array_flip(NUMBER_MAPPING);
+        if (count($intersect) === 10) {
+            $mapped = [];
+            foreach ($combined as $position => $value) {
+                $mapped[$numbers[$position]] = $reverse[$value];
+            }
+
+            $count += (int)implode('', array_map(fn($num) => $mapped[$num], $target));
+            continue 2;
+        }
+    }
 }
 
 echo $count . PHP_EOL;
