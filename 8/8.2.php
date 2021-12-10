@@ -10,19 +10,23 @@ foreach ($inputs as $set) {
     $numbers = array_map('sortString', $numbers);
     $target = array_map('sortString', $target);
 
-    $nums = array_fill(0, 10, null);
-    [$nums[1]] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 2));
-    [$nums[4]] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 4));
-    [$nums[7]] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 3));
-    [$nums[8]] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 7));
+    [$one] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 2));
+    [$seven] = array_values(array_filter($numbers, fn($wires) => strlen($wires) === 3));
 
     $mappedWires = array_fill_keys(range(0, 9), null);
 
-    $topWire = array_values(array_filter(str_split($nums[7]), fn($char) => !str_contains($nums[1], $char)))[0];
+    // Find the first wire and generate the permutations for the remaining wires
+    $topWire = array_values(array_filter(str_split($seven), fn($char) => !str_contains($one, $char)))[0];
     $remainingWires = array_values(array_filter(range('a', 'g'), fn($char) => $char !== $topWire));
     $permutations = array_map(fn($perm) => $topWire . $perm, generatePermutations($remainingWires));
 
-    // No idea what i'm trying to do here
+    // Do some extra filtering
+    $oneChars = array_fill_keys(str_split($one), true);
+    $permutations = array_filter($permutations, fn ($perm)=> isset($oneChars[substr($perm, 2, 1)]));
+    $permutations = array_filter($permutations, fn ($perm)=> isset($oneChars[substr($perm, 5, 1)]));
+
+    // Go through the remaining permutations and just try them all
+    // After the previous filtering step there's less than 50 left, so this is fast enough
     foreach ($permutations as $permutation) {
         $counter = 0;
         $wires = [];
