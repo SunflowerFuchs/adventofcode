@@ -16,18 +16,25 @@ foreach ($paths as [$start, $end]) {
     $possibilities[$end][] = $start;
 }
 
-function countRoutes(string $startPoint, array $possibilities, array $visited = []) : int {
-    if (!ctype_upper($startPoint) && isset($visited[$startPoint])) {
-        return 0;
-    }
+function countRoutes(
+    string $startPoint,
+    array $possibilities,
+    array $visited = [],
+    bool $hasUsedDoubleVisit = false
+): int {
     $visited[$startPoint] = true;
 
     $ends = 0;
     foreach ($possibilities[$startPoint] as $cave) {
         if ($cave === 'end') {
             $ends++;
-        } else {
-            $ends += countRoutes($cave, $possibilities, $visited);
+        } elseif (!ctype_lower($cave) || !isset($visited[$cave])) {
+            $ends += countRoutes($cave, $possibilities, $visited, $hasUsedDoubleVisit);
+        }
+
+        if (!$hasUsedDoubleVisit && ctype_lower($cave) && isset($visited[$cave]) && $cave !== 'start' && $cave !== 'end') {
+            $ends += countRoutes($cave, $possibilities,
+                array_filter($visited, fn($vCave) => $vCave !== $cave, ARRAY_FILTER_USE_KEY), true);
         }
     }
 
