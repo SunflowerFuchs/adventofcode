@@ -1,5 +1,7 @@
 <?php
 
+const NUM_PIECES = 9;
+
 class Position
 {
     public function __construct(public int $x = 0, public int $y = 0)
@@ -9,37 +11,52 @@ class Position
 
 class Rope
 {
+    protected array $pieces = [];
     protected array $tailPositions = [];
 
-    public function __construct(protected Position $headPos = new Position(), protected Position $tailPos = new Position())
+    public function __construct(int $length = 1)
     {
+        for ($i = 0; $i <= $length; $i++) {
+            $this->pieces[] = new Position();
+        }
     }
 
     public function moveHead(int $x = 0, int $y = 0): void
     {
         while ($x !== 0) {
             $change = ($x > 0 ? 1 : -1);
-            $this->headPos->x += $change;
-            $this->pullTail();
+            $this->pieces[0]->x += $change;
+            $this->pullPieces();
             $x += -$change;
         }
 
         while ($y !== 0) {
             $change = ($y > 0 ? 1 : -1);
-            $this->headPos->y += $change;
-            $this->pullTail();
+            $this->pieces[0]->y += $change;
+            $this->pullPieces();
             $y += -$change;
         }
 
         return;
     }
 
-    protected function pullTail(): void
+    protected function pullPieces(): void
     {
-        $xDistance = $this->headPos->x - $this->tailPos->x;
-        $yDistance = $this->headPos->y - $this->tailPos->y;
+        for ($i = 1; $i < count($this->pieces); $i++) {
+            $this->pieces[$i] = $this->pullPiece($this->pieces[$i - 1], $this->pieces[$i]);
+        }
+
+        $tail = $this->pieces[$i - 1];
+        $this->tailPositions[sprintf('%d:%d', $tail->x, $tail->y)] = true;
+    }
+
+    protected function pullPiece(Position $lead, Position $follow): Position
+    {
+        $xDistance = $lead->x - $follow->x;
+        $yDistance = $lead->y - $follow->y;
         $totalDistance = abs($xDistance) + abs($yDistance);
         switch ($totalDistance) {
+            case 4:
             case 3:
                 // Diagonal move required
             case 2:
@@ -49,8 +66,8 @@ class Rope
                 }
 
                 // Horizontal move
-                $this->tailPos->x += round($xDistance / 2);
-                $this->tailPos->y += round($yDistance / 2);
+                $follow->x += round($xDistance / 2);
+                $follow->y += round($yDistance / 2);
                 break;
             case 1:
                 // Direcly adjacent
@@ -59,18 +76,18 @@ class Rope
                 break;
         }
 
-        $this->tailPositions[] = sprintf('%d:%d', $this->tailPos->x, $this->tailPos->y);
+        return $follow;
     }
 
-    public function countTailPositions(): int
+    public function numTailPositions(): int
     {
-        return count(array_unique($this->tailPositions));
+        return count($this->tailPositions);
     }
 }
 
 $lines = array_map(fn($line) => explode(' ', $line), explode("\n", trim(file_get_contents(__DIR__ . '/input.txt'))));
 
-$rope = new Rope();
+$rope = new Rope(NUM_PIECES);
 foreach ($lines as [$direction, $distance]) {
     $distance = intval($distance);
 
@@ -83,4 +100,4 @@ foreach ($lines as [$direction, $distance]) {
     $rope->moveHead($x, $y);
 }
 
-printf("Total tail positions: %d\n", $rope->countTailPositions());
+printf("Total tail positions: %d\n", $rope->numTailPositions());
